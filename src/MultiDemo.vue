@@ -6,44 +6,23 @@
   <div
     id="main-content"
   >
-    <WorldWideTelescope
-      :wwt-namespace="wwtNamespace"
-    ></WorldWideTelescope>
 
-
-    <!-- This contains the splash screen content -->
-
-    <v-overlay
-      :model-value="showSplashScreen"
-      absolute
-      opacity="0.6"
-      :style="cssVars"
-      id="splash-overlay"
+    <div
+      id="iframes-container"
     >
-      <div
-        id="splash-screen"
-        v-click-outside="closeSplashScreen"
-        :style="cssVars"
+      <iframe
+        v-for="index in wwtCount"
+        :key="index"
+        :id="`wwt-${index-1}`"
+        :name="`wwt-${index-1}`"
+        :src="`https://web.wwtassets.org/research/latest/?origin=${origin}`"
+        class="wwt-iframe"
+        allow="accelerometer; clipboard-write; gyroscope"
+        allowfullscreen
+        frameborder="0"
       >
-        <font-awesome-icon
-          id="close-splash-button"
-          @click="closeSplashScreen"
-          @keyup.enter="closeSplashScreen"
-          icon="xmark"
-          tabindex="0"
-        />
-        <div id="splash-screen-text">
-          <p>Splash Screen Content</p>
-        </div>
-        <div id="splash-screen-acknowledgements" class="small">
-          This Data Story is brought to you by <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">Cosmic Data Stories</a> and <a href="https://www.worldwidetelescope.org/home/" target="_blank" rel="noopener noreferrer">WorldWide Telescope</a>.
-          
-          <div id="splash-screen-logos">
-            <credit-logos logo-size="5vmin"/>
-          </div>
-        </div>
-      </div>
-    </v-overlay>
+      </iframe>
+    </div>
 
     <transition name="fade">
       <div
@@ -63,22 +42,24 @@
 
     <div id="top-content">
       <div id="left-buttons">
-        <icon-button
-          v-model="showTextSheet"
-          fa-icon="book-open"
+        <v-btn
           :color="buttonColor"
-          :tooltip-text="showTextSheet ? 'Hide Info' : 'Learn More'"
-          tooltip-location="start"
+          @click="move([0,1])"
         >
-        </icon-button>
-        <icon-button
-          v-model="showVideoSheet"
-          fa-icon="video"
+          Move both
+        </v-btn>
+        <v-btn
           :color="buttonColor"
-          tooltip-text="Watch video"
-          tooltip-location="start"
+          @click="move([0])"
         >
-        </icon-button>
+          Move left
+        </v-btn>
+        <v-btn
+          :color="buttonColor"
+          @click="move([1])"
+        >
+          Move right
+        </v-btn>
       </div>
       <div id="center-buttons">
       </div>
@@ -96,201 +77,91 @@
     </div>
 
 
-    <!-- This dialog contains the video that is displayed when the video icon is clicked -->
-
-    <v-dialog
-      id="video-container"
-      v-model="showVideoSheet"
-      transition="slide-y-transition"
-      fullscreen
-    >
-      <div class="video-wrapper">
-        <font-awesome-icon
-          id="video-close-icon"
-          class="close-icon"
-          icon="times"
-          size="lg"
-          @click="showVideoSheet = false"
-          @keyup.enter="showVideoSheet = false"
-          tabindex="0"
-        ></font-awesome-icon>
-        <video
-          controls
-          id="info-video"
-        >
-          <source src="" type="video/mp4">
-        </video>
-      </div>
-    </v-dialog>
-
-
-    <!-- This dialog contains the informational content that is displayed when the book icon is clicked -->
-
-    <v-dialog
-      :style="cssVars"
-      class="bottom-sheet"
-      id="text-bottom-sheet"
-      hide-overlay
-      persistent
-      no-click-animation
-      absolute
-      width="100%"
-      :scrim="false"
-      location="bottom"
-      v-model="showTextSheet"
-      transition="dialog-bottom-transition"
-    >
-      <v-card height="100%">
-        <v-tabs
-          v-model="tab"
-          height="32px"
-          :color="accentColor"
-          :slider-color="accentColor"
-          id="tabs"
-          dense
-        >
-          <v-tab class="info-tabs" tabindex="0"><h3>Information</h3></v-tab>
-          <v-tab class="info-tabs" tabindex="0"><h3>Using WWT</h3></v-tab>
-        </v-tabs>
-        <font-awesome-icon
-          id="close-text-icon"
-          class="control-icon"
-          icon="times"
-          size="lg"
-          @click="showTextSheet = false"
-          @keyup.enter="showTextSheet = false"
-          tabindex="0"
-        ></font-awesome-icon>
-        <v-window v-model="tab" id="tab-items" class="pb-2 no-bottom-border-radius">
-          <v-window-item>
-            <v-card class="no-bottom-border-radius scrollable">
-              <v-card-text class="info-text no-bottom-border-radius">
-                Information goes here
-                <v-spacer class="end-spacer"></v-spacer>
-              </v-card-text>
-            </v-card>
-          </v-window-item>
-          <v-window-item>
-            <v-card class="no-bottom-border-radius scrollable">
-              <v-card-text class="info-text no-bottom-border-radius">
-                <v-container>
-                  <v-row align="center">
-                  <v-col cols="4">
-                      <v-chip
-                        label
-                        outlined
-                      >
-                        Pan
-                      </v-chip>
-                    </v-col>
-                    <v-col cols="8" class="pt-1">
-                      <strong>{{ touchscreen ? "press + drag" : "click + drag" }}</strong>  {{ touchscreen ? ":" : "or" }}  <strong>{{ touchscreen ? ":" : "W-A-S-D" }}</strong> {{ touchscreen ? ":" : "keys" }}<br>
-                    </v-col>
-                  </v-row>
-                  <v-row align="center">
-                    <v-col cols="4">
-                      <v-chip
-                        label
-                        outlined
-                      >
-                        Zoom
-                      </v-chip>
-                    </v-col>
-                    <v-col cols="8" class="pt-1">
-                      <strong>{{ touchscreen ? "pinch in and out" : "scroll in and out" }}</strong> {{ touchscreen ? ":" : "or" }} <strong>{{ touchscreen ? ":" : "I-O" }}</strong> {{ touchscreen ? ":" : "keys" }}<br>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <div class="credits">
-                      <h3>Credits:</h3>
-                      <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Vue Data Stories Team:</h4>
-                      John Lewis<br>
-                      Jon Carifio<br>
-                      Pat Udomprasert<br>
-                      Alyssa Goodman<br>
-                      Mary Dussault<br>
-                      Harry Houghton<br>
-                      Anna Nolin<br>
-                      Evaluator: Sue Sunbury<br>
-                      <br>
-                      <h4>WorldWide Telescope Team:</h4>
-                      Peter Williams<br>
-                      A. David Weigel<br>
-                      Jon Carifio<br>
-                      </div>
-                      <v-spacer class="end-spacer"></v-spacer>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <funding-acknowledgement/>
-                    </v-col>
-                  </v-row>
-                </v-container>              
-              </v-card-text>
-            </v-card>
-          </v-window-item>
-        </v-window>
-      </v-card>
-    </v-dialog>
-
   </div>
 </v-app>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from "vue";
-import { GotoRADecZoomParams, engineStore } from "@wwtelescope/engine-pinia";
-import { BackgroundImageset, skyBackgroundImagesets, supportsTouchscreen, blurActiveElement, useWWTKeyboardControls } from "@cosmicds/vue-toolkit";
+import { ref, computed, onMounted } from "vue";
+import { GotoRADecZoomParams } from "@wwtelescope/engine-pinia";
 import { useDisplay } from "vuetify";
 
-type SheetType = "text" | "video";
 type CameraParams = Omit<GotoRADecZoomParams, "instant">;
 export interface MultiDemoProps {
   wwtNamespace?: string;
   initialCameraParams?: CameraParams;
 }
 
-const store = engineStore();
-
-useWWTKeyboardControls(store);
-
-const touchscreen = supportsTouchscreen();
+const origin = ref(window.location.origin);
 const { smAndDown } = useDisplay();
 
-const props = withDefaults(defineProps<MultiDemoProps>(), {
-  wwtNamespace: "multi-demo",
-  initialCameraParams: () => {
-    return {
-      raRad: 0,
-      decRad: 0,
-      zoomDeg: 60
-    };
-  }
-});
+function getWindow(index: number): Window | null {
+  const idx = Math.round(index);
+  return (window[`wwt-${idx}`] as Window) ?? null;
+}
 
-const splash = new URLSearchParams(window.location.search).get("splash")?.toLowerCase() !== "false";
-const showSplashScreen = ref(splash);
-const backgroundImagesets = reactive<BackgroundImageset[]>([]);
-const sheet = ref<SheetType | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sendMessage(index: number, message: Record<string, any>) {
+  const frameWindow = getWindow(index);
+  frameWindow?.postMessage(message, "https://web.wwtassets.org/");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sendToAll(message: Record<string, any>) {
+  for (let i = 0; i < wwtCount.value; i++) {
+    sendMessage(i, message);
+  }
+}
+
+function setup() {
+  sendToAll({
+    event: "modify_settings",
+    settings: [["hideAllChrome", true]],
+    target: "app",
+  });
+
+  sendMessage(0, {
+    event: "setting_set",
+    setting: "showAltAzGrid",
+    value: true,
+  });
+
+  sendMessage(1, {
+    event: "set_background_by_name",
+    name: "Solar System",
+  });
+  sendMessage(1, {
+    event: "set_foreground_by_name",
+    name: "Solar System",
+  });
+}
+
+function move(indices: number[]) {
+  indices.forEach(index => {
+    sendMessage(index, {
+      event: "center_on_coordinates",
+      ra: 0,
+      dec: 0,
+      fov: 30,
+      instant: false,
+    });
+  });
+}
+
+setTimeout(setup, 2000);
+
 const layersLoaded = ref(false);
 const positionSet = ref(false);
 const accentColor = ref("#ffffff");
 const buttonColor = ref("#ffffff");
-const tab = ref(0);
+const wwtCount = ref(2);
 
 onMounted(() => {
-  store.waitForReady().then(async () => {
-    skyBackgroundImagesets.forEach(iset => backgroundImagesets.push(iset));
-    store.gotoRADecZoom({
-      ...props.initialCameraParams,
-      instant: true
-    }).then(() => positionSet.value = true);
-
-    // If there are layers to set up, do that here!
+  setTimeout(() => {
+    setup();
     layersLoaded.value = true;
-  });
+    positionSet.value = true;
+  }, 1500);
 });
 
 const ready = computed(() => layersLoaded.value && positionSet.value);
@@ -305,57 +176,9 @@ const smallSize = computed(() => smAndDown.value);
 const cssVars = computed(() => {
   return {
     "--accent-color": accentColor.value,
-    "--app-content-height": showTextSheet.value ? "66%" : "100%",
+    "--app-content-height": "100%",
   };
 });
-
-
-/**
-  Computed flags that control whether the relevant dialogs display.
-  The `sheet` data member stores which sheet is open, so these are just
-  computed wrappers around modifying/querying that which can be used as
-  dialog v-model values
-*/
-const showTextSheet = computed({
-  get() {
-    return sheet.value === "text";
-  },
-  set(_value: boolean) {
-    selectSheet("text");
-  }
-});
-
-const showVideoSheet = computed({
-  get() {
-    return sheet.value === "video";
-  },
-  set(value: boolean) {
-    selectSheet("video");
-    if (!value) {
-      const video = document.querySelector("#info-video") as HTMLVideoElement;
-      video.pause();
-    }
-  }
-});
-
-/**
-  This is convenient if there's any other logic that we want to run
-  when the splash screen is closed
-*/
-function closeSplashScreen() {
-  showSplashScreen.value = false;
-}
-
-function selectSheet(sheetType: SheetType | null) {
-  if (sheet.value === sheetType) {
-    sheet.value = null;
-    nextTick(() => {
-      blurActiveElement();
-    });
-  } else {
-    sheet.value = sheetType;
-  }
-}
 </script>
 
 <style lang="less">
@@ -392,6 +215,11 @@ body {
   font-family: Verdana, Arial, Helvetica, sans-serif;
 }
 
+#app {
+  height: 100%;
+  width: 100%;
+}
+
 #main-content {
   position: fixed;
   width: 100%;
@@ -401,25 +229,17 @@ body {
   transition: height 0.1s ease-in-out;
 }
 
-#app {
+#iframes-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   width: 100%;
   height: 100%;
-  margin: 0;
-  overflow: hidden;
-  font-size: 11pt;
 
-  .wwtelescope-component {
-    position: absolute;
-    top: 0;
+  iframe {
     width: 100%;
     height: 100%;
-    border-style: none;
-    border-width: 0;
-    margin: 0;
-    padding: 0;
   }
 }
-
 
 .fade-enter-active,
 .fade-leave-active {
@@ -481,6 +301,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  
+  .v-btn {
+    pointer-events: auto;
+  }
 }
 
 #right-buttons {
