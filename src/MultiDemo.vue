@@ -83,13 +83,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { GotoRADecZoomParams } from "@wwtelescope/engine-pinia";
 import { useDisplay } from "vuetify";
 
-type CameraParams = Omit<GotoRADecZoomParams, "instant">;
 export interface MultiDemoProps {
-  wwtNamespace?: string;
-  initialCameraParams?: CameraParams;
+  wwtCount: number;
 }
 
 const origin = ref(window.location.origin);
@@ -100,6 +97,10 @@ function getWindow(index: number): Window | null {
   return (window[`wwt-${idx}`] as Window) ?? null;
 }
 
+const props = withDefaults(defineProps<MultiDemoProps>(), {
+  wwtCount: 2,
+});
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sendMessage(index: number, message: Record<string, any>) {
   const frameWindow = getWindow(index);
@@ -108,7 +109,7 @@ function sendMessage(index: number, message: Record<string, any>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sendToAll(message: Record<string, any>) {
-  for (let i = 0; i < wwtCount.value; i++) {
+  for (let i = 0; i < props.wwtCount; i++) {
     sendMessage(i, message);
   }
 }
@@ -148,20 +149,59 @@ function move(indices: number[]) {
   });
 }
 
-setTimeout(setup, 2000);
+const intervals: Map<number, string> = new Map();
+const loaded = new Array(props.wwtCount).fill(false);
+window.addEventListener("message", (message) => {
+  const data = message.data;
+  if (data.type === "wwt_ping_pong") {
+    const idx = Number(data.sessionId);
+    clearInterval(intervals[idx]);
+    loaded[idx] = true;
+  }
+  const sourceWindow = message.source as Window;
+  let index = -1;
+  for (let i = 0; i < props.wwtCount; i++) {
+    if (window[`wwt-${i}`] == sourceWindow) {
+      index = i;
+      break;
+    }
+  }
+  if (index >= 0) {
+    console.log(`Message received from iframe ${index}`);
+    console.log(message);
+  }
+});
+
+function setUpPings() {
+  for (let i = 0; i < props.wwtCount; i++) {
+    const strID = String(i);
+    const interval = setInterval(() => {
+      sendMessage(i, {
+        type: "wwt_ping_pong",
+        threadId: strID,
+        sessionId: strID,
+      });
+    }, 100);
+    intervals[i] = interval;
+  }
+}
 
 const layersLoaded = ref(false);
 const positionSet = ref(false);
 const accentColor = ref("#ffffff");
 const buttonColor = ref("#ffffff");
-const wwtCount = ref(2);
 
 onMounted(() => {
-  setTimeout(() => {
-    setup();
-    layersLoaded.value = true;
-    positionSet.value = true;
-  }, 3000);
+  setUpPings();
+  const interval = setInterval(() => {
+    if (document.readyState === "complete" &&
+        loaded.every(Boolean)) {
+      setup();
+      layersLoaded.value = true;
+      positionSet.value = true;
+      clearInterval(interval);
+    }
+  }, 100);
 });
 
 const ready = computed(() => layersLoaded.value && positionSet.value);
