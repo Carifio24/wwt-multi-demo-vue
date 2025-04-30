@@ -5,6 +5,8 @@ on:
     branches:
       main
 
+permissions: write
+
 jobs:
   build:
     if: ${{ github.repository_owner == 'Carifio24' }}
