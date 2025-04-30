@@ -161,7 +161,7 @@ onMounted(() => {
     setup();
     layersLoaded.value = true;
     positionSet.value = true;
-  }, 1500);
+  }, 2000);
 });
 
 const ready = computed(() => layersLoaded.value && positionSet.value);
