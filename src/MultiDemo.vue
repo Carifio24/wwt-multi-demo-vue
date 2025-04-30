@@ -16,6 +16,7 @@
         :id="`wwt-${index-1}`"
         :name="`wwt-${index-1}`"
         :src="`https://web.wwtassets.org/research/latest/?origin=${origin}`"
+        :onload="frameLoad(index-1)"
         class="wwt-iframe"
         allow="accelerometer; clipboard-write; gyroscope"
         allowfullscreen
@@ -148,20 +149,50 @@ function move(indices: number[]) {
   });
 }
 
-setTimeout(setup, 2000);
-
 const layersLoaded = ref(false);
 const positionSet = ref(false);
 const accentColor = ref("#ffffff");
 const buttonColor = ref("#ffffff");
 const wwtCount = ref(2);
 
+function frameLoad(index: number) {
+  loaded[index] = true;
+}
+
+const loaded = new Array(wwtCount.value).fill(false);
+window.addEventListener("message", (message) => {
+  const sourceWindow = message.source as Window;
+  let index = -1;
+  for (let i = 0; i < wwtCount.value; i++) {
+    if (window[`wwt-${i}`] == sourceWindow) {
+      index = i;
+      break;
+    }
+  }
+  console.log(index, message);
+  if (index >= 0) {
+    console.log(`Message received from iframe ${index}`);
+    console.log(message);
+    loaded[index] = true;
+  }
+});
+
+
 onMounted(() => {
-  setTimeout(() => {
-    setup();
-    layersLoaded.value = true;
-    positionSet.value = true;
-  }, 3000);
+  const interval = setInterval(() => {
+    console.log("HERE");
+    console.log(document.readyState);
+    console.log(loaded);
+    if (document.readyState === "complete" &&
+        loaded.every(Boolean)) {
+      setTimeout(() => {
+        setup();
+        layersLoaded.value = true;
+        positionSet.value = true;
+      }, 1000);
+      clearInterval(interval);
+    }
+  }, 100);
 });
 
 const ready = computed(() => layersLoaded.value && positionSet.value);
